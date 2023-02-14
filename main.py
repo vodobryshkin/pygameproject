@@ -1,14 +1,129 @@
 import pygame
-import pygame
 import pygame.gfxdraw
 from random import choice
 import time
 import datetime
+import random
+
+
+backsides_music = ['музыка/All_Of_The_Lights.mp3', 'музыка/Drunk_and_Hot_Girls.mp3', 'музыка/Flashing_Lights.mp3',
+                   'музыка/Hell_Of_A_Life.mp3']
+
+music = random.choice(backsides_music)
+
+
+def load_image(title):
+    image = pygame.image.load(title)
+    return image
+
+
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
+
+class Particle(pygame.sprite.Sprite):
+    # сгенерируем частицы разного размера
+    fire = [load_image("white_brick.png")]
+    for scale in (5, 10, 20):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(all_sprites)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+
+        # у каждой частицы своя скорость — это вектор
+        self.velocity = [dx, dy]
+        # и свои координаты
+        self.rect.x, self.rect.y = pos
+
+        # гравитация будет одинаковой (значение константы)
+        self.gravity = 1
+
+    def update(self):
+        # применяем гравитационный эффект:
+        # движение с ускорением под действием гравитации
+        self.velocity[1] += self.gravity
+        # перемещаем частицу
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        # убиваем, если частица ушла за экран
+        if not self.rect.colliderect(self.screen):
+            self.kill()
+
+class Particle21e(pygame.sprite.Sprite):
+    # сгенерируем частицы разного размера
+    fire = [load_image("white_brick.png")]
+    for scale in (5, 10, 20):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(all_sprites)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+
+        # у каждой частицы своя скорость — это вектор
+        self.velocity = [dx, dy]
+        # и свои координаты
+        self.rect.x, self.rect.y = pos
+
+        # гравитация будет одинаковой (значение константы)
+        self.gravity = 1
+
+    def update(self):
+        # применяем гравитационный эффект:
+        # движение с ускорением под действием гравитации
+        self.velocity[1] += self.gravity
+        # перемещаем частицу
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        # убиваем, если частица ушла за экран
+        if not self.rect.colliderect(self.screen):
+            self.kill()
+
+class Background(pygame.sprite.Sprite):
+    image = load_image("background.jpg")
+
+    def __init__(self, group):
+        # НЕОБХОДИМО вызвать конструктор родительского класса Sprite.
+        # Это очень важно !!!
+        super().__init__(group)
+        self.image = Background.image
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+
+    def update(self, *args):
+        pass
+
+
+all_sprites = pygame.sprite.Group()
+
+all_sprites.add(Background(all_sprites))
 
 
 WIDTH = 1000
 HEIGHT = 500
-TITLE= "BreakTheBrick"
+TITLE = "Сломай кирпич 1"
 
 FPS = 60
 
@@ -40,46 +155,13 @@ pygame.font.init()
 shape_color = (40, 210, 250)
 
 
-def main():
-    # initializes Pygame
-    pygame.init()
-
-    # sets the window title
-    pygame.display.set_caption(u'Draw a circle')
-
-    # sets the window size
-    screen = pygame.display.set_mode((400, 400))
-
-    # draws 3 circles
-    pygame.draw.circle(screen, shape_color, (105, 105), 80, 1)
-    pygame.draw.circle(screen, shape_color, (290, 105), 80, 4)
-    pygame.draw.circle(screen, shape_color, (105, 290), 80, 0)
-
-    # updates the screen
-    pygame.display.flip()
-
-    # infinite loop
-    while True:
-        # returns a single event from the queue
-        event = pygame.event.wait()
-
-        # if the 'close' button of the window is pressed
-        if event.type == pygame.QUIT:
-            # stops the application
-            break
-
-    # finalizes Pygame
-    pygame.quit()
-
-
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         # pygame.sprite.Sprite.__init__(self)
         super(Player, self).__init__()
-        self.width = 130
-        self.height = 20
-        self.image = pygame.Surface((self.width, self.height))
-        self.image.fill(BLACK)
+        self.width = 105
+        self.height = 26
+        self.image = load_image('block.png')
         self.rect = self.image.get_rect()
         self.rect.x = WIDTH / 2 - self.width / 2
         self.rect.y = HEIGHT - (self.height + 10)
@@ -105,10 +187,9 @@ class Player(pygame.sprite.Sprite):
 class Ball(pygame.sprite.Sprite):
     def __init__(self, player):
         super(Ball, self).__init__()
-        self.height = 15
-        self.width = 15
-        self.image = pygame.Surface((self.width, self.height))
-        self.image.fill(BLACK)
+        self.height = 40
+        self.width = 40
+        self.image = load_image('ball.png')
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
         self.x_vel = 8
@@ -138,16 +219,14 @@ class Ball(pygame.sprite.Sprite):
             self.hasCollided = True
 
     def collisions(self):
-        if self.rect.bottom >= self.p.rect.top and (
-                self.rect.x >= self.p.rect.left and self.rect.x <= self.p.rect.right):
+        if self.rect.bottom >= self.p.rect.top and self.rect.x >= self.p.rect.left and self.rect.x <= self.p.rect.right:
             self.y_vel *= -1
 
 
 class Brick(pygame.sprite.Sprite):
     def __init__(self, ball, player, x, y):
         super(Brick, self).__init__()
-        self.image = pygame.Surface((95, 50))
-        self.image.fill(BLACK)
+        self.image = load_image('white_brick.png')
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -217,9 +296,12 @@ class Game:
         self.counter = True
 
     def run(self):
+        pygame.mixer.init()
+        pygame.mixer.music.load(music)
+        pygame.mixer.music.play(-1, 0.0)
         while self.playing:
             self.clock.tick(FPS)
-            self.win.fill(WHITE)
+            all_sprites.draw(self.win)
             self.draw()
             self.events()
             self.update()
@@ -229,11 +311,6 @@ class Game:
 
     def events(self):
         if self.ball.hasCollided and self.counter:
-
-            self.gameOver()
-            self.counter = False
-
-        if self.player.score >= 20 and self.counter:
 
             self.gameOver()
             self.counter = False
@@ -302,17 +379,13 @@ class Game:
         file.write(now + '---' + str(self.player.score))
         file.close()
         
-        button = Button(self.win, (255, 0, 0), Text("Play Again",(305, 310), 20, (0, 0, 0)),
-                        (300, 300), (110, 50), lambda: self.broadcast_new_game(button))
+        button = Button(self.win, (255, 0, 0), Text("Play Again", (305, 310), 20, (0, 0, 0)), (300, 300), (110, 50),
+                        lambda: self.broadcast_new_game(button))
 
-        button.render(True)
+        button.drawning()
 
     def draw_text(self, string, coordx, coordy, fontSize, color):
         Text.draw_text(self.win, string, coordx, coordy, fontSize, color)
-
-
-import pygame
-import pygame.gfxdraw
 
 pygame.init()
 pygame.font.init()
@@ -327,19 +400,19 @@ class Text:
         self.color = color
 
     @staticmethod
-    def draw_text(win, string, coordx, coordy, fontSize, color):
+    def draw_text(screen, string, coordx, coordy, fontSize, color):
         font = pygame.font.Font('freesansbold.ttf', fontSize)
         text = font.render(string, True, color)
-        win.blit(text, (coordx, coordy))
+        screen.blit(text, (coordx, coordy))
 
 
 class Button:
-    def __init__(self, win, color, text, position, size, command):
-        self.win = win
+    def __init__(self, screen, color, text, position, size, command):
+        self.screen = screen
         self.color = color
         self.text = text
-        self.coordx = position[0]
-        self.coordy = position[1]
+        self.cx = position[0]
+        self.cy = position[1]
         self.width = size[0]
         self.height = size[1]
         self.command = command
@@ -357,11 +430,10 @@ class Button:
 
         self.isClicked = False
 
-    def draw_rounded_rect(self, surface, rect, color, corner_radius):
+    def krugliy_krug(self, surface, rect, color, corner_radius):
         if rect.width < 2 * corner_radius or rect.height < 2 * corner_radius:
-            raise ValueError(f"Both height (rect.height) and width (rect.width) must be > 2 * corner radius ({corner_radius})")
+            raise ValueError(f"Код дристня")
 
-        # need to use anti aliasing circle drawing routines to smooth the corners
         pygame.gfxdraw.aacircle(surface, rect.left+corner_radius, rect.top+corner_radius, corner_radius, color)
         pygame.gfxdraw.aacircle(surface, rect.right-corner_radius-1, rect.top+corner_radius, corner_radius, color)
         pygame.gfxdraw.aacircle(surface, rect.left+corner_radius, rect.bottom-corner_radius-1, corner_radius, color)
@@ -383,26 +455,28 @@ class Button:
         rect_tmp.center = rect.center
         pygame.draw.rect(surface, color, rect_tmp)
 
-
-    def render(self, bool):
+    def drawning(self):
         while True:
             mouse = pygame.mouse.get_pos()
             for event in pygame.event.get():
-                if(event.type == pygame.QUIT):
+                if event.type == pygame.QUIT:
                     pygame.quit()
-                if(event.type == pygame.MOUSEBUTTONDOWN):
-                    if(self.coordx < mouse[0] < self.coordx + self.width) and (self.coordy < mouse[1] < self.coordy + self.height):
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.cx < mouse[0] < self.cx + self.width and self.cy < mouse[1] < self.cy + \
+                            self.height:
                         self.command()
                         self.isClicked = True
 
-            if(self.coordx < mouse[0] < self.coordx + self.width) and (self.coordy < mouse[1] < self.coordy + self.height):
-                rect = pygame.rect.Rect(self.coordx, self.coordy, self.width, self.height)
-                self.draw_rounded_rect(self.win, rect, self.lightColor, 10)
+            if(self.cx < mouse[0] < self.cx + self.width) and (self.cy < mouse[1] < self.cy +
+                                                               self.height):
+                rect = pygame.rect.Rect(self.cx, self.cy, self.width, self.height)
+                self.krugliy_krug(self.screen, rect, self.lightColor, 10)
             else:
-                rect = pygame.rect.Rect(self.coordx, self.coordy, self.width, self.height)
-                self.draw_rounded_rect(self.win, rect, self.color, 10)
+                rect = pygame.rect.Rect(self.cx, self.cy, self.width, self.height)
+                self.krugliy_krug(self.screen, rect, self.color, 10)
 
-            Text.draw_text(self.win, self.text.string, self.text.coordx, self.text.coordy, self.text.fontSize, self.text.color)
+            Text.draw_text(self.screen, self.text.string, self.text.cx, self.text.cy, self.text.fontSize,
+                           self.text.color)
             pygame.display.update()
 
             if self.isClicked:
